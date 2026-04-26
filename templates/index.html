@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Relief Matrix</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='styles.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-surface">
+  <nav class="navbar navbar-expand-lg shadow-sm navbar-dark bg-gradient-primary">
+    <div class="container">
+      <a class="navbar-brand fw-semibold" href="/">Relief Matrix</a>
+      <div class="d-flex align-items-center gap-2">
+        <input
+          id="disasterSearch"
+          type="search"
+          class="form-control form-control-sm"
+          placeholder="Search disasters..."
+          aria-label="Search disasters"
+          style="min-width: 220px;"
+        />
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container">
+      <div class="hero-content-wrapper">
+        <div class="hero-main-content">
+          <div class="hero-badge">Emergency Response Platform</div>
+          <h2 class="hero-title">
+            <span class="title-gradient">Disaster Relief Management System</span>
+          </h2>
+          <div class="hero-features-modern">
+            <div class="feature-card-modern feature-card-1">
+              <span class="feature-text feature-text-1">Track Disasters</span>
+            </div>
+            <div class="feature-card-modern feature-card-2">
+              <span class="feature-text feature-text-2">Coordinate Warehouses & Respond Quickly</span>
+            </div>
+            <div class="feature-card-modern feature-card-3">
+              <span class="feature-text feature-text-3">Clear Visibility Of Severity, Timelines And Locations</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stats-card">
+          <div class="stats-card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <p class="stats-label">Total Disasters</p>
+                <h3 class="stats-number">{{ disasters|length }}</h3>
+              </div>
+              <div class="status-pill-modern">
+                <span class="pulse-dot"></span>
+                Live
+              </div>
+            </div>
+          </div>
+          <div class="stats-card-body">
+            <p class="stats-tips-title">Quick Tips</p>
+            <ul class="stats-tips-list">
+              <li>Click any row to view resources and distributions</li>
+              <li>Severity badges are color-coded for faster scanning</li>
+              <li>Use the "Add Disaster" button to onboard new events</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container pb-5">
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="mb-3">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} shadow-sm">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
+    <div class="disaster-section-header-modern mb-5">
+      <div class="section-header-content">
+        <div class="section-title-wrapper">
+          <div class="section-badge">📋 Active Records</div>
+          <h2 class="section-title-modern">List of Disasters</h2>
+        </div>
+        <a class="btn-add-disaster" href="{{ url_for('create_disaster') }}">
+          <span class="btn-add-icon">+</span>
+          <span>Add New Disaster</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="disaster-table-container" id="disaster-table">
+      <div class="table-header-modern">
+        <div class="table-header-content">
+          <div class="table-title-section">
+            <div class="table-icon-wrapper">
+              <span class="table-icon-modern">🌐</span>
+            </div>
+            <div>
+              <h4 class="table-title">Disaster Records</h4>
+              <p class="table-subtitle">{{ disasters|length }} active disaster{{ 's' if disasters|length != 1 else '' }} tracked</p>
+            </div>
+          </div>
+          <div class="table-stats">
+            <span class="stat-badge">{{ disasters|length }}</span>
+            <span class="stat-label">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0 table-hover table-modern">
+          <thead class="table-header-custom">
+            <tr>
+              <th class="ps-4">Name</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th class="pe-4">Severity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in disasters %}
+            <tr
+              data-href="{{ url_for('disaster_detail', disaster_id=d.DisasterID) }}"
+              onclick="window.location.href=this.dataset.href"
+              class="table-row-link"
+            >
+              <td class="ps-4">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="disaster-icon">🌍</span>
+                  <span class="fw-semibold disaster-name">{{ d.Name }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="badge text-bg-light type-badge">{{ d.Type or '—' }}</span>
+              </td>
+              <td>
+                <span class="badge rounded-pill text-bg-light text-primary-emphasis location-badge">
+                  📍 {{ d.Location or '—' }}
+                </span>
+              </td>
+              <td class="text-muted date-cell">{{ d.StartDate }}</td>
+              <td class="text-muted date-cell">{{ d.EndDate or '—' }}</td>
+              <td class="pe-4">
+                {% set sev = (d.Severity or '').lower() %}
+                {% if 'critical' in sev %}
+                  {% set sev_class = 'text-bg-orange' %}
+                {% elif 'severe' in sev or 'high' in sev %}
+                  {% set sev_class = 'text-bg-danger' %}
+                {% elif 'moderate' in sev or 'medium' in sev %}
+                  {% set sev_class = 'text-bg-warning' %}
+                {% elif 'mild' in sev or 'low' in sev %}
+                  {% set sev_class = 'text-bg-success' %}
+                {% else %}
+                  {% set sev_class = 'text-bg-secondary' %}
+                {% endif %}
+                <span class="badge {{ sev_class }} severity-badge">
+                  {{ d.Severity or '—' }}
+                </span>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center text-muted py-5">
+                <div class="empty-state">
+                  <span class="empty-icon">📭</span>
+                  <p class="mb-2 fw-semibold">No disasters recorded yet</p>
+                  <p class="text-muted small mb-0">Click "Add New Disaster" to get started</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer-bar">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex gap-3 align-items-center">
+        <span>© 2025 Relief Matrix</span>
+        <a href="mailto:support@reliefmatrix.com">Contact</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const searchInput = document.getElementById('disasterSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const term = searchInput.value.toLowerCase();
+        document.querySelectorAll('#disaster-table tbody tr').forEach(row => {
+          const text = row.innerText.toLowerCase();
+          row.style.display = text.includes(term) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</body>
+</html>

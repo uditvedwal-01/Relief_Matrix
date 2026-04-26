@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Predict - {{ disaster.Name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('static', filename='styles.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-surface">
+    <nav
+      class="navbar navbar-expand-lg navbar-dark bg-gradient-primary shadow-sm"
+    >
+      <div class="container">
+        <a class="navbar-brand fw-semibold" href="/">Relief Matrix</a>
+        <div class="navbar-nav ms-auto">
+          <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm">Home</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4 pb-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2>Prediction Dashboard</h2>
+          <p class="text-muted mb-0">
+            {{ disaster.Name }} • {{ disaster.Type or 'Unknown Type' }} • {{
+            disaster.Location or 'Unknown Location' }}
+          </p>
+        </div>
+        <a
+          href="{{ url_for('disaster_detail', disaster_id=disaster.DisasterID) }}"
+          class="btn btn-primary"
+          >← Back to Disaster</a
+        >
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="card">
+            <div
+              class="card-header d-flex justify-content-between align-items-center"
+            >
+              <h5 class="mb-0">AI Demand Forecasting</h5>
+              {% if ml_data and ml_data.model_trained %}
+              <span class="badge bg-success">ML Model Active</span>
+              {% else %}
+              <span class="badge bg-warning">Heuristic Mode</span>
+              {% endif %}
+            </div>
+            <div class="card-body">
+              <p class="text-muted">
+                Based on {{ 'machine learning analysis' if ml_data and
+                ml_data.model_trained else 'historical patterns' }} and disaster
+                characteristics:
+              </p>
+
+              {% if ml_data and ml_data.demand_predictions %}
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Current Stock</th>
+                      <th>Predicted Demand</th>
+                      <th>Daily Avg</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item_id, prediction in
+                    ml_data.demand_predictions.items() %}
+                    <tr>
+                      <td>{{ prediction.item_name }}</td>
+                      <td>
+                        <span class="badge bg-primary"
+                          >{{ prediction.current_stock }}</span
+                        >
+                      </td>
+                      <td>
+                        <span class="badge bg-warning"
+                          >{{ prediction.predicted_demand }}</span
+                        >
+                      </td>
+                      <td>
+                        <span class="badge bg-info"
+                          >{{ prediction.daily_average }}</span
+                        >
+                      </td>
+                      <td>
+                        {% if prediction.stock_status == 'Low' %}
+                        <span class="badge bg-danger"
+                          >{{ prediction.stock_status }}</span
+                        >
+                        {% else %}
+                        <span class="badge bg-success"
+                          >{{ prediction.stock_status }}</span
+                        >
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="text-muted">
+                No items available for prediction analysis.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">AI Resource Allocation</h5>
+            </div>
+            <div class="card-body">
+              {% if ml_data and ml_data.allocation_recommendations %}
+              <div class="mb-3">
+                <h6>Smart Recommendations:</h6>
+                {% for rec in ml_data.allocation_recommendations %}
+                <div
+                  class="alert alert-{{ 'danger' if rec.priority == 'high' else 'warning' if rec.priority == 'medium' else 'info' }} alert-sm"
+                >
+                  <strong>{{ rec.type|title }}:</strong> {{ rec.message }} {% if
+                  rec.action %} <br /><small><em>{{ rec.action }}</em></small>
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <!-- ML Training Status -->
+              {% if ml_data %}
+              <div class="mt-3">
+                <h6>ML Model Status:</h6>
+                <div class="row">
+                  <div class="col-4">
+                    <span
+                      class="badge bg-{{ 'success' if ml_data.model_trained else 'warning' }}"
+                    >
+                      Demand: {{ 'ML' if ml_data.model_trained else 'Heuristic'
+                      }}
+                    </span>
+                  </div>
+                  <div class="col-4">
+                    <span
+                      class="badge bg-{{ 'success' if ml_data.risk_trained else 'warning' }}"
+                    >
+                      Risk: {{ 'ML' if ml_data.risk_trained else 'Heuristic' }}
+                    </span>
+                  </div>
+                  <div class="col-4">
+                    <span
+                      class="badge bg-{{ 'success' if ml_data.trend_trained else 'warning' }}"
+                    >
+                      Trend: {{ 'ML' if ml_data.trend_trained else 'Heuristic'
+                      }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {% endif %} {% if trend_analysis %}
+              <h6>Distribution Trends Analysis</h6>
+              <div class="row text-center">
+                <div class="col-4">
+                  <div class="border rounded p-2">
+                    <h5 class="text-primary mb-1">
+                      {{ trend_analysis.total_distributions }}
+                    </h5>
+                    <small class="text-muted">Total Distributions</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="border rounded p-2">
+                    <h5 class="text-success mb-1">
+                      {{ trend_analysis.avg_daily }}
+                    </h5>
+                    <small class="text-muted">Daily Average</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="border rounded p-2">
+                    <h5
+                      class="text-{{ 'success' if trend_analysis.trend_direction == 'increasing' else 'warning' if trend_analysis.trend_direction == 'decreasing' else 'info' }} mb-1"
+                    >
+                      {{ trend_analysis.trend_direction|title }}
+                    </h5>
+                    <small class="text-muted">Trend</small>
+                  </div>
+                </div>
+              </div>
+
+              {% if trend_analysis.peak_day %}
+              <div class="mt-2">
+                <small class="text-muted"
+                  >Peak activity: {{ trend_analysis.peak_day }}</small
+                >
+              </div>
+              {% endif %} {% else %}
+              <p class="text-muted">
+                Insufficient data for trend analysis. Record more distributions
+                to enable AI predictions.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4 mt-2">
+        <!-- AI Risk Assessment -->
+        <div class="col-lg-8">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">AI Risk Assessment</h5>
+            </div>
+            <div class="card-body">
+              {% if ml_data and ml_data.risk_assessment %}
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h4
+                      class="text-{{ 'danger' if ml_data.risk_assessment.risk_level == 'High' else 'warning' if ml_data.risk_assessment.risk_level == 'Medium' else 'success' }}"
+                    >
+                      {{ ml_data.risk_assessment.risk_level }}
+                    </h4>
+                    <p class="text-muted">Risk Level</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h4 class="text-info">
+                      {{ ml_data.risk_assessment.risk_score }}
+                    </h4>
+                    <p class="text-muted">Risk Score</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h4 class="text-primary">{{ beneficiaries|length }}</h4>
+                    <p class="text-muted">Affected Population</p>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center">
+                    <h4 class="text-success">
+                      {{ ((items|sum(attribute='Quantity') /
+                      beneficiaries|length) if beneficiaries else 0)|round(1) }}
+                    </h4>
+                    <p class="text-muted">Resources per Person</p>
+                  </div>
+                </div>
+              </div>
+
+              {% if ml_data.risk_assessment.risk_factors %}
+              <div class="mt-3">
+                <h6>Risk Factors:</h6>
+                <ul class="list-unstyled">
+                  {% for factor in ml_data.risk_assessment.risk_factors %}
+                  <li>{{ factor }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %} {% if ml_data.risk_assessment.recommendations %}
+              <div class="mt-3">
+                <h6>AI Recommendations:</h6>
+                <ul class="list-unstyled">
+                  {% for rec in ml_data.risk_assessment.recommendations %}
+                  <li>{{ rec }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% endif %} {% else %}
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <h4 class="text-warning">
+                      {{ disaster.Severity or 'Medium' }}
+                    </h4>
+                    <p class="text-muted">Disaster Severity</p>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <h4 class="text-info">{{ beneficiaries|length }}</h4>
+                    <p class="text-muted">Affected Population</p>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="text-center">
+                    <h4 class="text-success">
+                      {{ ((items|sum(attribute='Quantity') /
+                      beneficiaries|length) if beneficiaries else 0)|round(1) }}
+                    </h4>
+                    <p class="text-muted">Resources per Person</p>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Optimization Suggestions -->
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Optimization Suggestions</h5>
+            </div>
+            <div class="card-body">
+              {% if optimization_suggestions %} {% for suggestion in
+              optimization_suggestions %}
+              <div
+                class="alert alert-{{ 'danger' if suggestion.priority == 'high' else 'warning' if suggestion.priority == 'medium' else 'info' }} alert-sm"
+              >
+                <strong>{{ suggestion.type|title }}:</strong> {{
+                suggestion.message }} <br /><small
+                  ><em>{{ suggestion.action }}</em></small
+                >
+              </div>
+              {% endfor %} {% else %}
+              <p class="text-muted">
+                No optimization suggestions available. Continue monitoring the
+                system.
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ML Visualizations -->
+      <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Demand Forecasting Chart</h5>
+            </div>
+            <div class="card-body">
+              <canvas id="demandChart" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Risk Assessment</h5>
+            </div>
+            <div class="card-body">
+              <canvas id="riskGauge" height="300"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='ml_charts.js') }}"></script>
+
+    <!-- Pass data to JavaScript -->
+    <script>
+      window.mlData = {{ ml_data|tojson if ml_data else 'null' }};
+      window.trendAnalysis = {{ trend_analysis|tojson if trend_analysis else 'null' }};
+      window.warehouses = {{ warehouses|map(attribute='Location')|list|tojson if warehouses else 'null' }};
+      window.items = {{ items|map(attribute='Name')|list|tojson if items else 'null' }};
+    </script>
+
+    <footer class="footer-bar">
+      <div
+        class="container d-flex justify-content-between align-items-center flex-wrap gap-2"
+      >
+        <div class="d-flex gap-3 align-items-center">
+          <span>© 2025 Relief Matrix</span>
+          <a href="mailto:support@reliefmatrix.com">Contact</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
